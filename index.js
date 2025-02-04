@@ -141,10 +141,10 @@ console.log(externalSharing);
 expressApp.post('/uploadFileFromWorkdriveWidget', upload.single('file'), async (req, res) => {
   try {
     const maxFileSize = 10 * 1024 * 1024;
-  console.log("file::"+req.file.size);
       const { file } = req;
       const parentId = req.body.parent_id; 
       const token = req.body.accessToken; 
+      console.log(req.file);
       if(req.file.size / (1024*1024)< 200){
         console.log('token:: ',token);
         console.log('parentId:: ',req.body.fileName);
@@ -154,8 +154,7 @@ expressApp.post('/uploadFileFromWorkdriveWidget', upload.single('file'), async (
         formData.append('filename', req.body.fileName);
         formData.append('parent_id', parentId.trim());
         formData.append('override-name-exist', 'false'); 
-        console.log(...formData.getHeaders());
-  
+       
         const response = await axios.post('https://www.zohoapis.com/workdrive/api/v1/upload', formData, {
             headers: {
                 'Authorization': `Zoho-oauthtoken ${token}`,
@@ -197,7 +196,7 @@ expressApp.post('/uploadFileFromWorkdriveWidget', upload.single('file'), async (
         console.error("Request Data:", JSON.stringify(error.config.data, null, 2));
     }
     console.error("Full Error Stack:", error.stack);    
-    
+
     res.status(500).json({ error: 'File upload failed', details: error.message });
 } finally {
     if (req.file) {
