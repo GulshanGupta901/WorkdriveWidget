@@ -196,7 +196,7 @@ expressApp.post('/uploadFileFromWorkdriveWidget', upload.single('file'), async (
         console.error("Request Headers:", JSON.stringify(error.config.headers, null, 2));
         console.error("Request Data:", JSON.stringify(error.config.data, null, 2));
     }
-    console.error("Full Error Stack:", error.stack);
+    console.error("Full Error Stack:", error.stack);    
     
     res.status(500).json({ error: 'File upload failed', details: error.message });
 } finally {
