@@ -573,7 +573,7 @@ async function generatePDF(base64DataList) {
     formData.append('file', blob, fileName+` V${sharedWorkdriveFolderLen}.pdf`); // Append file with name
     formData.append('parent_id', workdriveId.getAttribute('data-sharedWorkdriveId'));
 
-    const response = await fetch('https://mailmergeandworkdrive-1.onrender.com/upload', {
+    const response = await fetch('https://workdrivewidget-l8ir.onrender.com/upload', {
       method: 'POST',
       body: formData,
   });
@@ -789,7 +789,7 @@ async function previewCoverLetterAsPdf() {
   // Use Promise.all to wait for all requests to finish
   const fetchPromises = attachmentIds.map(async (eachId) => {
     console.log('Fetching file for ID:', eachId);
-    const response = await fetch('https://mailmergeandworkdrive-1.onrender.com/workdriveFile', {
+    const response = await fetch('https://workdrivewidget-l8ir.onrender.com/workdriveFile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json', 
@@ -812,7 +812,7 @@ async function previewCoverLetterAsPdf() {
   console.log('Expected length:', listItems.length);
 
   if (base64DataList.length === listItems.length) {
-    const writerResponse = await fetch('https://mailmergeandworkdrive-1.onrender.com/writerFile', {
+    const writerResponse = await fetch('https://workdrivewidget-l8ir.onrender.com/writerFile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json', 
