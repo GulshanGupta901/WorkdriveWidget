@@ -15,6 +15,7 @@ const axios = require('axios');
 
 process.env.PWD = process.env.PWD || process.cwd();
 
+const upload = multer({ dest: 'uploads/' });
 var expressApp = express();
 var port = process.env.PORT || 3000;
 expressApp.use(cors());
@@ -23,17 +24,7 @@ expressApp.use(morgan('dev'));
 expressApp.use(bodyParser.json());
 expressApp.use(bodyParser.urlencoded({ extended: false }));
 expressApp.use(errorHandler());
-expressApp.use(bodyParser.json({ limit: '200mb' }));
-expressApp.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-      cb(null, 'uploads/')
-  },
-  filename: function (req, file, cb) {
-      cb(null, file.originalname)
-  }
-});
-const upload = multer({ storage: storage, limits: { fileSize: 200 * 1024 * 1024 } });
+
 
 expressApp.use('/', function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -53,8 +44,7 @@ expressApp.post('/workdriveFile', async (req, res) => {
         'Authorization': `Zoho-oauthtoken ${req.body.accessToken}`
       }
   });
-  const base64String = Buffer.from(pdf, 'binary').toString('base64')
-  console.log(base64String);
+  const base64String = Buffer.from(pdf, 'binary').toString('base64');
   res.json({"base64String" : base64String});
   } catch (error) {
     console.error('Error:', error);
