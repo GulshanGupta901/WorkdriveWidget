@@ -173,7 +173,7 @@ $("#template_id_1").on("change", function () {
   document.getElementById("spinner").style.display = "flex";
   document.getElementById("spinner-overlay").style.display = "block";
   document.getElementById("iframeAndButtonContainer").style.display = "none";
-
+  document.getElementById("messageForloading").innerHTML = "Publishing Document...Please wait...";
   const selectedTemplate = document.getElementById("template_id_1").value;
   const iframeContainer = document.getElementById('iframeContainer');
   var func_name = "mergedocument";
@@ -539,10 +539,11 @@ function renderSelectedList() {
 // }
 
 
-async function generatePDF(base64DataList) {
+async function generatePDF(base64DataList,recognizedValue) {
   console.log('generatePDF');
 
   if (base64DataList.length > 0) {
+    document.getElementById("messageForloading").innerHTML = "Uploading Files to workdrive... Please wait...";
     console.log('ismde');
     const { PDFDocument } = PDFLib;
     const mergedPdf = await PDFDocument.create();
@@ -572,8 +573,10 @@ async function generatePDF(base64DataList) {
     const formData = new FormData();
     formData.append('file', blob, fileName+` V${sharedWorkdriveFolderLen}.pdf`); // Append file with name
     formData.append('parent_id', workdriveId.getAttribute('data-sharedWorkdriveId'));
+    formData.append('accessToken', accessToken);
 
-    const response = await fetch('https://workdrivewidget-l8ir.onrender.com/upload', {
+
+    const response = await fetch('https://workdrivewidget-1.onrender.com/upload', {
       method: 'POST',
       body: formData,
   });
@@ -581,13 +584,17 @@ async function generatePDF(base64DataList) {
   const result = await response.json();
   console.log('File uploaded successfully:', result);
   if(result.folderId !=null && result.folderId !='' && result.folderId !=undefined){
+    folderId =result.folderId;
+    console.log(folderId);
     base64DataList.shift();
    document.getElementById("spinner").style.display = "none";
    document.getElementById("spinner-overlay").style.display = "none";
+   if(recognizedValue != 'Send Email'){
+
    const allOtherSections = document.querySelectorAll("body > div:not(#iframeContainerForMergedFile)");
    document.getElementById("iframeContainerForMergedFile").style.display = "block";
    allOtherSections.forEach(section => section.style.display = "none");
-   
+   document.getElementById("messageForloading").innerHTML = "";
    document.getElementById("ContainerForMergedFile").innerHTML = '';
    const iframe = document.createElement('iframe');
      iframe.src = "https://workdrive.zohoexternal.com/file/"+result.folderId ; 
@@ -595,8 +602,10 @@ async function generatePDF(base64DataList) {
      iframe.height = "1000px";
      iframe.style.border = "1px solid #ccc";
      document.getElementById("ContainerForMergedFile").appendChild(iframe);
+   }
  }
   } else {
+    document.getElementById("messageForloading").innerHTML = "";
     showPopup('Please upload at least one valid PDF file.', 'error');
   }
 }
@@ -607,6 +616,7 @@ async function generatePDF(base64DataList) {
 document.getElementById("mergeAndSaveDocument").addEventListener("click", async () => {
   document.getElementById('emailModal').style.display = 'flex';
   document.getElementById("toAddress").value = clientEmail;
+  
   if(document.getElementById("customMessageCheckbox").checked == true){
     document.getElementById("emailMessage").innerHTML = `Hello, We have shared a document with you in attachment.`;
     if(folderId !=''){
@@ -663,74 +673,81 @@ document.getElementById("customMessageCheckbox").addEventListener("change",()=>{
 })
 //Send Email
 // Event listener for the Send Email button
-document.getElementById("sendEmail").addEventListener("click", () => {
+document.getElementById("sendEmail").addEventListener("click",async () => {
   // Get form field values
+  document.getElementById("sendEmail").innerHTML = 'Please wait...';
+  
+  // Check if folderId is empty and call the function first
+  if (folderId === '') {
+   await previewCoverLetterAsPdf("Send Email").then(() => {
+      sendEmail(); 
+    }).catch(error => {
+      showPopup('Error in generating preview: ' + error, 'error');
+      document.getElementById("sendEmail").innerHTML = 'Send Email';
+    });
+  } else {
+    sendEmail();
+  }
+});
+
+function sendEmail() {
   const toAddress = document.getElementById("toAddress").value;
   const ccAddress = document.getElementById("ccAddress").value;
   const bccAddress = document.getElementById("bccAddress").value;
   const emailSubject = document.getElementById("emailSubject").value;
   const customMessageCheckbox = document.getElementById("customMessageCheckbox").checked;
-// let message ='';
-//   if(customMessageCheckbox == true){
-//     message = `Hello , We have shared a document with you in attachment.`;
-//     if(folderId !=''){
-//       message = `Hello , We have shared a document with you in attachment and This is attached link of the documents https://workdrive.zohoexternal.com/file/${folderId}`
-//     }
-//   }else{
-//     message = `Hello , We have shared a document link with you please have a look. Here is your Cover Letter https://writer.zohopublic.com/writer/published/${documentId}`;
-//     if(folderId !=''){
-//       message = `Hello , We have shared a document link with you please have a look. Here is your Cover Letter https://writer.zohopublic.com/writer/published/${documentId} and This is attached link of the documents https://workdrive.zohoexternal.com/file/${folderId}`
-//     }
-//   }
-  
+
   if (!toAddress.trim()) {
-    showPopup("The 'To address' field is required.","error");
+    showPopup("The 'To address' field is required.", "error");
+    document.getElementById("sendEmail").innerHTML = 'Send Email';
     return;
   }
 
   const emailData = {
     ccAddress,
     bccAddress,
-    emailSubject
+    emailSubject,
   };
 
   console.log("Email Data:", emailData);
-var func_name = "sendmailmerge";
-  document.getElementById("sendEmail").innerHTML = 'Please wait...';
-  console.log('folderId+'+folderId);
+
+  var func_name = "sendmailmerge";
   var req_data = {
     "arguments": JSON.stringify({
       "ModuleName": selectedRecord,
       "id": document.getElementById("selectedModuleRecords").value,
       "documentId": documentId,
       "folderId": folderId,
-      "replyTo":toAddress,
-      "ccAddress":ccAddress,
-      "bccAddress":bccAddress,
-      "emailSubject":emailSubject,
-      "isChecked":customMessageCheckbox,
-      "Message": document.getElementById("emailMessage").value
-    })
+      "replyTo": toAddress,
+      "ccAddress": ccAddress,
+      "bccAddress": bccAddress,
+      "emailSubject": emailSubject,
+      "isChecked": customMessageCheckbox,
+      "Message": document.getElementById("emailMessage").value,
+    }),
   };
+
   ZOHO.CRM.FUNCTIONS.execute(func_name, req_data)
     .then(function (data) {
       console.log(data);
-      if(data.code == "success"){
+      if (data.code == "success") {
         document.getElementById("emailModal").style.display = "none";
-        showPopup('Document has been send successfully','success');
-        // document.getElementById("toAddress").value='';
-  document.getElementById("sendEmail").innerHTML = 'Send Email';
-
-  document.getElementById("ccAddress").value='';
-   document.getElementById("bccAddress").value='';
-  document.getElementById("emailSubject").value='Merged Document';
-   document.getElementById("customMessageCheckbox").checked='';
-   document.getElementById("emailMessage").innerHTML='';
-
+        showPopup('Document has been sent successfully', 'success');
+        document.getElementById("toAddress").value = '';
+        document.getElementById("sendEmail").innerHTML = 'Send Email';
+        document.getElementById("ccAddress").value = '';
+        document.getElementById("bccAddress").value = '';
+        document.getElementById("emailSubject").value = 'Merged Document';
+        document.getElementById("customMessageCheckbox").checked = '';
+        document.getElementById("emailMessage").innerHTML = '';
       }
     })
+    .catch(error => {
+      showPopup('Error in sending email: ' + error, 'error');
+      document.getElementById("sendEmail").innerHTML = 'Send Email';
+    });
+}
 
-});
 
 // Event listener for the Cancel button
 document.getElementById("closeModal").addEventListener("click", () => {
@@ -752,6 +769,7 @@ function base64ToBinary(base64) {
  function previewCoverLetter() {
   // Clear any existing iframe
   document.getElementById("spinner").style.display = "flex";
+  document.getElementById("messageForloading").innerHTML = "Previewing...Please wait...";
   document.getElementById("spinner-overlay").style.display = "block";
   document.getElementById("iframeAndButtonContainer").style.display = "none";
   let allOtherSections = ''
@@ -765,6 +783,7 @@ function base64ToBinary(base64) {
     iframeContainer.innerHTML = '';
     document.getElementById("spinner").style.display = "none";
     document.getElementById("spinner-overlay").style.display = "none";
+    document.getElementById("messageForloading").innerHTML = "";
 
     document.getElementById("iframeAndButtonContainer").style.display = "block";
     allOtherSections.forEach(section => section.style.display = "none");
@@ -778,18 +797,19 @@ function base64ToBinary(base64) {
    
   }, 10000)
 }
-async function previewCoverLetterAsPdf() {
+async function previewCoverLetterAsPdf(recognizedValue) {
   let base64DataList = [];
   const selectedList = document.getElementById("selectedList");
   const listItems = selectedList.querySelectorAll("li");
   let attachmentIds = Array.from(listItems).map(li => li.querySelector(".attachment-name").getAttribute("data-fileid"));
   
   console.log('attachmentIds::', attachmentIds);
+  document.getElementById("messageForloading").innerHTML = "Merging File...Please wait...";
 
   // Use Promise.all to wait for all requests to finish
   const fetchPromises = attachmentIds.map(async (eachId) => {
     console.log('Fetching file for ID:', eachId);
-    const response = await fetch('https://workdrivewidget-l8ir.onrender.com/workdriveFile', {
+    const response = await fetch('https://workdrivewidget-1.onrender.com/workdriveFile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json', 
@@ -812,7 +832,7 @@ async function previewCoverLetterAsPdf() {
   console.log('Expected length:', listItems.length);
 
   if (base64DataList.length === listItems.length) {
-    const writerResponse = await fetch('https://workdrivewidget-l8ir.onrender.com/writerFile', {
+    const writerResponse = await fetch('https://workdrivewidget-1.onrender.com/writerFile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json', 
@@ -831,7 +851,7 @@ async function previewCoverLetterAsPdf() {
 
     console.log('Final base64DataList:', base64DataList);
     
-    generatePDF(base64DataList);
+    generatePDF(base64DataList,recognizedValue);
   }
 }
 
@@ -948,7 +968,7 @@ popupSubmit.addEventListener('click', async () => {
    document.getElementById("spinner").style.display = "flex";
  document.getElementById("spinner-overlay").style.display = "block";
  try {
-   await previewCoverLetterAsPdf();
+   await previewCoverLetterAsPdf('PopupSubmit');
 } catch (error) {
    console.error('Error previewing PDF:', error);
 }
