@@ -75,6 +75,7 @@ expressApp.post('/writerFile', async (req, res) => {
 expressApp.post("/upload", upload.single('file'), async (req, res) => {
  
   const parentId = req.body.parent_id;
+  accessToken = req.body.accessToken;
 console.log(req.file);
 console.log(parentId);
 if(req.file.size / (1024*1024)< 200){
