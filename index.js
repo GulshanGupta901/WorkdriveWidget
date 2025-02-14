@@ -115,8 +115,22 @@ const externalSharing = await axios.post('https://www.zohoapis.com/workdrive/api
       "Content-Type": "application/json"
   },
 });
-console.log(externalSharing);
-  res.json({"folderId" : response.data.data[0].attributes.resource_id});
+const fileInfoString = response.data.data[0].attributes["File INFO"];
+console.log(fileInfoString);
+   const fileInfo = JSON.parse(fileInfoString);
+  let sizeIsIn = "";
+   if(fileInfo.size < 1024){
+    size = fileInfo.size;
+    sizeIsIn = "Bytes";
+   }else if(fileInfo.size < 1024 * 1024){
+    size = fileInfo.size/ 1024;
+    sizeIsIn = "KB";
+   }else{
+    size = fileInfo.size/ (1024*1024);
+
+    sizeIsIn = "MB";
+   }
+  res.json({"folderId" : response.data.data[0].attributes.resource_id,"size": size,"sizeFormate":sizeIsIn});
 }else{
   const formData = new FormData();
   formData.append('content', fs.createReadStream(file.path));
